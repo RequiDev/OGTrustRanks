@@ -13,7 +13,7 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine";
         public const string Company = "Lava Gang";
-        public const string Version = "1.0.0";
+        public const string Version = "1.0.1";
         public const string DownloadLink = "https://github.com/HerpDerpinstine/OGTrustRanks";
     }
 
@@ -123,7 +123,7 @@ namespace OGTrustRanks
         {
             if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
             {
-                Player player = PlayerManager.Method_Public_Static_Player_String_1(__0.id);
+                Player player = PlayerManager.Method_Public_Static_Player_String_0(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
                     TrustRanks rank = GetTrustRankEnum(__0);
@@ -146,7 +146,7 @@ namespace OGTrustRanks
         {
             if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
             {
-                Player player = PlayerManager.Method_Public_Static_Player_String_1(__0.id);
+                Player player = PlayerManager.Method_Public_Static_Player_String_0(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
                     TrustRanks rank = GetTrustRankEnum(__0);
