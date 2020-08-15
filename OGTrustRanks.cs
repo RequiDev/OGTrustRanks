@@ -5,6 +5,7 @@ using VRC;
 using VRC.Core;
 using MelonLoader;
 using Harmony;
+using VRC.UI;
 
 namespace OGTrustRanks
 {
@@ -13,7 +14,7 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine";
         public const string Company = "Lava Gang";
-        public const string Version = "1.0.2";
+        public const string Version = "1.0.1";
         public const string DownloadLink = "https://github.com/HerpDerpinstine/OGTrustRanks";
     }
 
@@ -33,10 +34,12 @@ namespace OGTrustRanks
 
             ModPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
             ModPrefs.RegisterPrefBool("ogtrustranks", "enabled", true, "Enabled");
-
             harmonyInstance = HarmonyInstance.Create("OGTrustRanks");
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_String_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_1", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_2", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+
         }
 
         public override void OnModSettingsApplied() => SetupTrustRankButton();
@@ -183,11 +186,13 @@ namespace OGTrustRanks
             VETERAN,
             LEGENDARY
         }
-        private static VRC.Player GetUserByID(string userID)
+        public static VRC.Player GetUserByID(string userID)
         {
             foreach (VRC.Player plr in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
-                if (plr.prop_APIUser_0 != null && plr.prop_APIUser_0.id == userID)
+            {
+                if (plr.prop_APIUser_0 != null plr.prop_APIUser_0.id == userID)
                     return plr;
+            }
             return null;
         }
     }
