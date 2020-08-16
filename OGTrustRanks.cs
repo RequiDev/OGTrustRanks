@@ -87,37 +87,6 @@ namespace OGTrustRanks
             }
         }
 
-        private static Transform CreateButton(UiToggleButton toggleButton, string name, string display_name, Color color)
-        {
-            Transform displayTransform = toggleButton.transform.Find("VETERAN");
-            if (displayTransform != null)
-            {
-                GameObject newbutton = GameObject.Instantiate(displayTransform.gameObject, displayTransform.parent);
-                newbutton.SetActive(true);
-                newbutton.gameObject.SetActive(true);
-                newbutton.name = name;
-                Transform newbuttontrans = newbutton.transform;
-                newbuttontrans.name = name;
-                Text[] btnTextsOn = newbuttontrans.Find("ON").GetComponentsInChildren<Text>();
-                btnTextsOn[3].text = display_name;
-                btnTextsOn[3].color = color;
-                btnTextsOn[3].resizeTextForBestFit = true;
-                Text[] btnTextsOff = newbuttontrans.Find("OFF").GetComponentsInChildren<Text>();
-                btnTextsOff[3].text = display_name;
-                btnTextsOff[3].color = color;
-                btnTextsOff[3].resizeTextForBestFit = true;
-                btnTextsOff[3].fontSize = btnTextsOn[3].fontSize;
-                btnTextsOff[3].resizeTextMinSize = btnTextsOn[3].resizeTextMinSize;
-                btnTextsOff[3].resizeTextMaxSize = btnTextsOn[3].resizeTextMaxSize;
-                btnTextsOff[3].alignment = btnTextsOn[3].alignment;
-                RectTransform transOn = btnTextsOn[3].GetComponent<RectTransform>();
-                RectTransform transOff = btnTextsOff[3].GetComponent<RectTransform>();
-                transOff.sizeDelta = transOn.sizeDelta;
-                return newbutton.transform;
-            }
-            return null;
-        }
-
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
             if ((__0 != null) && MelonPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
