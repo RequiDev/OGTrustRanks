@@ -1,10 +1,11 @@
-﻿using System.Reflection;
+using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC;
 using VRC.Core;
 using MelonLoader;
 using Harmony;
+using VRC.UI;
 
 namespace OGTrustRanks
 {
@@ -33,10 +34,12 @@ namespace OGTrustRanks
 
             ModPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
             ModPrefs.RegisterPrefBool("ogtrustranks", "enabled", true, "Enabled");
-
             harmonyInstance = HarmonyInstance.Create("OGTrustRanks");
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_String_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_1", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_2", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+
         }
 
         public override void OnModSettingsApplied() => SetupTrustRankButton();
@@ -123,7 +126,7 @@ namespace OGTrustRanks
         {
             if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
             {
-                Player player = PlayerManager.Method_Public_Static_Player_String_0(__0.id);
+                Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
                     TrustRanks rank = GetTrustRankEnum(__0);
@@ -146,7 +149,7 @@ namespace OGTrustRanks
         {
             if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
             {
-                Player player = PlayerManager.Method_Public_Static_Player_String_0(__0.id);
+                Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
                     TrustRanks rank = GetTrustRankEnum(__0);
@@ -182,6 +185,15 @@ namespace OGTrustRanks
             IGNORE,
             VETERAN,
             LEGENDARY
+        }
+        public static VRC.Player GetUserByID(string userID)
+        {
+            foreach (VRC.Player plr in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
+            {
+                if (plr.prop_APIUser_0 != null plr.prop_APIUser_0.id == userID)
+                    return plr;
+            }
+            return null;
         }
     }
 }
