@@ -5,7 +5,6 @@ using VRC;
 using VRC.Core;
 using MelonLoader;
 using Harmony;
-using VRC.UI;
 
 namespace OGTrustRanks
 {
@@ -20,7 +19,6 @@ namespace OGTrustRanks
 
     public class OGTrustRanks : MelonMod
     {
-        private static HarmonyInstance harmonyInstance = null;
         private static PropertyInfo VRCPlayer_ModTag = null;
         private static Color TrustedUserColor;
         private static Color VeteranUserColor;
@@ -32,14 +30,12 @@ namespace OGTrustRanks
             VeteranUserColor = new Color(0.6705882352941176f, 0.803921568627451f, 0.937254901960784f);
             LegendaryUserColor = new Color(1f, 0.4117647058823529f, 0.7058823529411765f);
 
-            ModPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
-            ModPrefs.RegisterPrefBool("ogtrustranks", "enabled", true, "Enabled");
-            harmonyInstance = HarmonyInstance.Create("OGTrustRanks");
+            MelonPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
+            MelonPrefs.RegisterBool("ogtrustranks", "enabled", true, "Enabled");
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_String_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_1", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
             harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_2", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
-
         }
 
         public override void OnModSettingsApplied() => SetupTrustRankButton();
@@ -55,25 +51,25 @@ namespace OGTrustRanks
                     UiToggleButton component = QuickMenu_gameObject.transform.Find("Toggle_States_ShowTrustRank_Colors").GetComponent<UiToggleButton>();
                     if (component != null)
                     {
-                        bool is_enabled = ModPrefs.GetBool("ogtrustranks", "enabled");
+                        bool is_enabled = MelonPrefs.GetBool("ogtrustranks", "enabled");
                         if (is_enabled)
                         {
                             TrustRanks rank = GetTrustRankEnum(APIUser.CurrentUser);
                             if (rank == TrustRanks.VETERAN)
-                                SetupRankDisplay(component, "TRUSTED", "Veteran User", VeteranUserColor);
+                                SetupRankDisplay(component, "Veteran User", VeteranUserColor);
                             else if (rank == TrustRanks.LEGENDARY)
-                                SetupRankDisplay(component, "TRUSTED", "Legendary User", LegendaryUserColor);
+                                SetupRankDisplay(component, "Legendary User", LegendaryUserColor);
                         }
                         else
-                            SetupRankDisplay(component, "TRUSTED", "Trusted User", TrustedUserColor);
+                            SetupRankDisplay(component, "Trusted User", TrustedUserColor);
                     }
                 }
             }
         }
 
-        private static void SetupRankDisplay(UiToggleButton toggleButton, string name, string display_name, Color color)
+        private static void SetupRankDisplay(UiToggleButton toggleButton, string display_name, Color color)
         {
-            Transform displayTransform = toggleButton.transform.Find(name);
+            Transform displayTransform = toggleButton.transform.Find("TRUSTED");
             if (displayTransform != null)
             {
                 GameObject gameObject = displayTransform.gameObject;
@@ -124,7 +120,7 @@ namespace OGTrustRanks
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
-            if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
+            if ((__0 != null) && MelonPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
@@ -147,7 +143,7 @@ namespace OGTrustRanks
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
-            if ((__0 != null) && ModPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
+            if ((__0 != null) && MelonPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
@@ -186,13 +182,12 @@ namespace OGTrustRanks
             VETERAN,
             LEGENDARY
         }
-        public static VRC.Player GetUserByID(string userID)
+
+        private static Player GetUserByID(string userID)
         {
-            foreach (VRC.Player plr in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
-            {
-                if (plr.prop_APIUser_0 != null plr.prop_APIUser_0.id == userID)
-                    return plr;
-            }
+            foreach (Player ply in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
+                if ((ply.prop_APIUser_0 != null) && (ply.prop_APIUser_0.id == userID))
+                    return ply;
             return null;
         }
     }
