@@ -5,6 +5,7 @@ using VRC;
 using VRC.Core;
 using MelonLoader;
 using Harmony;
+using System.Linq;
 
 namespace OGTrustRanks
 {
@@ -32,10 +33,14 @@ namespace OGTrustRanks
 
             MelonPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
             MelonPrefs.RegisterBool("ogtrustranks", "enabled", true, "Enabled");
-            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_String_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
-            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_0", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
-            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_1", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
-            harmonyInstance.Patch(typeof(VRCPlayer).GetMethod("Method_Public_Static_Color_APIUser_2", BindingFlags.Public | BindingFlags.Static), new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+
+            var FriendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).FirstOrDefault();
+            harmonyInstance.Patch(FriendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+
+            var ColorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
+            ColorForRankTargetMethods.ForEach(it =>
+                harmonyInstance.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)))
+            );
         }
 
         public override void OnModSettingsApplied() => SetupTrustRankButton();
