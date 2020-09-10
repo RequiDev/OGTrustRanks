@@ -102,12 +102,12 @@ namespace OGTrustRanks
                     TrustRanks rank = GetTrustRankEnum(__0);
                     if (rank == TrustRanks.LEGENDARY)
                     {
-                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Legendary User)" : "Legendary User");
+                        __result = "Legendary User";
                         return false;
                     }
                     else if (rank == TrustRanks.VETERAN)
                     {
-                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Veteran User)" : "Veteran User");
+                        __result = "Veteran User";
                         return false;
                     }
                 }
