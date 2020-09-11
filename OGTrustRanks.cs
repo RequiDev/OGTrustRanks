@@ -27,12 +27,25 @@ namespace OGTrustRanks
 
         public override void OnApplicationStart()
         {
-            TrustedUserColor = new Color(0.5058824f, 0.2627451f, 0.9019608f);
-            VeteranUserColor = new Color(0.6705882352941176f, 0.803921568627451f, 0.937254901960784f);
-            LegendaryUserColor = new Color(1f, 0.4117647058823529f, 0.7058823529411765f);
-
             MelonPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
             MelonPrefs.RegisterBool("ogtrustranks", "enabled", true, "Enabled");
+            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorR", 171, "Red component of the Veteran color");
+            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorG", 205, "Green component of the Veteran color");
+            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorB", 239, "Blue component of the Veteran color");
+            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorR", 255, "Red component of the Legendary color");
+            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorG", 105, "Green component of the Legendary color");
+            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorB", 180, "Blue component of the Legendary color");
+
+            int VeteranR = MelonPrefs.GetInt("ogtrustranks", "VeteranColorR");
+            int VeteranG = MelonPrefs.GetInt("ogtrustranks", "VeteranColorG");
+            int VeteranB = MelonPrefs.GetInt("ogtrustranks", "VeteranColorB");
+            int LegendaryR = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorR");
+            int LegendaryG = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorG");
+            int LegendaryB = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorB");
+
+            TrustedUserColor = new Color(0.5058824f, 0.2627451f, 0.9019608f);
+            VeteranUserColor = new Color(VeteranR / 255.0f, VeteranG / 255.0f, VeteranB / 255.0f);
+            LegendaryUserColor = new Color(LegendaryR / 255.0f, LegendaryG / 255.0f, LegendaryB / 255.0f);
 
             var FriendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).FirstOrDefault();
             harmonyInstance.Patch(FriendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
@@ -43,7 +56,21 @@ namespace OGTrustRanks
             );
         }
 
-        public override void OnModSettingsApplied() => SetupTrustRankButton();
+        public override void OnModSettingsApplied()
+        {
+            int VeteranR = MelonPrefs.GetInt("ogtrustranks", "VeteranColorR");
+            int VeteranG = MelonPrefs.GetInt("ogtrustranks", "VeteranColorG");
+            int VeteranB = MelonPrefs.GetInt("ogtrustranks", "VeteranColorB");
+            int LegendaryR = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorR");
+            int LegendaryG = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorG");
+            int LegendaryB = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorB");
+
+            VeteranUserColor = new Color(VeteranR / 255.0f, VeteranG / 255.0f, VeteranB / 255.0f);
+            LegendaryUserColor = new Color(LegendaryR / 255.0f, LegendaryG / 255.0f, LegendaryB / 255.0f);
+
+            SetupTrustRankButton();
+        }
+
         public override void OnLevelWasInitialized(int level) => SetupTrustRankButton();
 
         private static void SetupTrustRankButton()
