@@ -47,7 +47,7 @@ namespace OGTrustRanks
             VeteranUserColor = new Color(VeteranR / 255.0f, VeteranG / 255.0f, VeteranB / 255.0f);
             LegendaryUserColor = new Color(LegendaryR / 255.0f, LegendaryG / 255.0f, LegendaryB / 255.0f);
 
-            var FriendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).FirstOrDefault();
+            var FriendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().Where(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).FirstOrDefault();
             harmonyInstance.Patch(FriendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
 
             var ColorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
