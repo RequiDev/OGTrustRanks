@@ -14,7 +14,7 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine, Emilia, and dave-kun";
         public const string Company = "Lava Gang";
-        public const string Version = "1.0.5";
+        public const string Version = "1.0.6";
         public const string DownloadLink = "https://github.com/HerpDerpinstine/OGTrustRanks";
     }
 
