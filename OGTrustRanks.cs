@@ -129,12 +129,12 @@ namespace OGTrustRanks
                     TrustRanks rank = GetTrustRankEnum(__0);
                     if (rank == TrustRanks.LEGENDARY)
                     {
-                        __result = "Legendary User";
+                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Legendary User)" : "Legendary User");
                         return false;
                     }
                     else if (rank == TrustRanks.VETERAN)
                     {
-                        __result = "Veteran User";
+                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Veteran User)" : "Veteran User");
                         return false;
                     }
                 }
