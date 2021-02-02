@@ -27,43 +27,43 @@ namespace OGTrustRanks
 
         public override void OnApplicationStart()
         {
-            MelonPrefs.RegisterCategory("ogtrustranks", "OGTrustRanks");
-            MelonPrefs.RegisterBool("ogtrustranks", "enabled", true, "Enabled");
-            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorR", 171, "Red component of the Veteran color");
-            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorG", 205, "Green component of the Veteran color");
-            MelonPrefs.RegisterInt("ogtrustranks", "VeteranColorB", 239, "Blue component of the Veteran color");
-            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorR", 255, "Red component of the Legendary color");
-            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorG", 105, "Green component of the Legendary color");
-            MelonPrefs.RegisterInt("ogtrustranks", "LegendaryColorB", 180, "Blue component of the Legendary color");
+            MelonPreferences.CreateCategory("ogtrustranks", "OGTrustRanks");
+            MelonPreferences.CreateEntry("ogtrustranks", "enabled", true, "Enabled");
+            MelonPreferences.CreateEntry("ogtrustranks", "VeteranColorR", 171, "Red component of the Veteran color");
+            MelonPreferences.CreateEntry("ogtrustranks", "VeteranColorG", 205, "Green component of the Veteran color");
+            MelonPreferences.CreateEntry("ogtrustranks", "VeteranColorB", 239, "Blue component of the Veteran color");
+            MelonPreferences.CreateEntry("ogtrustranks", "LegendaryColorR", 255, "Red component of the Legendary color");
+            MelonPreferences.CreateEntry("ogtrustranks", "LegendaryColorG", 105, "Green component of the Legendary color");
+            MelonPreferences.CreateEntry("ogtrustranks", "LegendaryColorB", 180, "Blue component of the Legendary color");
 
-            int VeteranR = MelonPrefs.GetInt("ogtrustranks", "VeteranColorR");
-            int VeteranG = MelonPrefs.GetInt("ogtrustranks", "VeteranColorG");
-            int VeteranB = MelonPrefs.GetInt("ogtrustranks", "VeteranColorB");
-            int LegendaryR = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorR");
-            int LegendaryG = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorG");
-            int LegendaryB = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorB");
+            int VeteranR = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorR");
+            int VeteranG = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorG");
+            int VeteranB = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorB");
+            int LegendaryR = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorR");
+            int LegendaryG = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorG");
+            int LegendaryB = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorB");
 
             TrustedUserColor = new Color(0.5058824f, 0.2627451f, 0.9019608f);
             VeteranUserColor = new Color(VeteranR / 255.0f, VeteranG / 255.0f, VeteranB / 255.0f);
             LegendaryUserColor = new Color(LegendaryR / 255.0f, LegendaryG / 255.0f, LegendaryB / 255.0f);
 
             var FriendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().Where(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).FirstOrDefault();
-            harmonyInstance.Patch(FriendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
+            Harmony.Patch(FriendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetFriendlyDetailedNameForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)));
 
             var ColorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
             ColorForRankTargetMethods.ForEach(it =>
-                harmonyInstance.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)))
+                Harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)))
             );
         }
 
-        public override void OnModSettingsApplied()
+        public override void OnPreferencesSaved()
         {
-            int VeteranR = MelonPrefs.GetInt("ogtrustranks", "VeteranColorR");
-            int VeteranG = MelonPrefs.GetInt("ogtrustranks", "VeteranColorG");
-            int VeteranB = MelonPrefs.GetInt("ogtrustranks", "VeteranColorB");
-            int LegendaryR = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorR");
-            int LegendaryG = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorG");
-            int LegendaryB = MelonPrefs.GetInt("ogtrustranks", "LegendaryColorB");
+            int VeteranR = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorR");
+            int VeteranG = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorG");
+            int VeteranB = MelonPreferences.GetEntryValue<int>("ogtrustranks", "VeteranColorB");
+            int LegendaryR = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorR");
+            int LegendaryG = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorG");
+            int LegendaryB = MelonPreferences.GetEntryValue<int>("ogtrustranks", "LegendaryColorB");
 
             VeteranUserColor = new Color(VeteranR / 255.0f, VeteranG / 255.0f, VeteranB / 255.0f);
             LegendaryUserColor = new Color(LegendaryR / 255.0f, LegendaryG / 255.0f, LegendaryB / 255.0f);
@@ -83,7 +83,7 @@ namespace OGTrustRanks
                     UiToggleButton component = QuickMenu_gameObject.transform.Find("Toggle_States_ShowTrustRank_Colors").GetComponent<UiToggleButton>();
                     if (component != null)
                     {
-                        bool is_enabled = MelonPrefs.GetBool("ogtrustranks", "enabled");
+                        bool is_enabled = MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled");
                         if (is_enabled)
                         {
                             TrustRanks rank = GetTrustRankEnum(APIUser.CurrentUser);
@@ -107,12 +107,12 @@ namespace OGTrustRanks
                 GameObject gameObject = displayTransform.gameObject;
                 if ((gameObject != null) && (gameObject.gameObject != null))
                 {
-                    toggleButton.toggledOnButton = gameObject.transform.Find("ON").gameObject;
-                    Text[] btnTextsOn = toggleButton.toggledOnButton.GetComponentsInChildren<Text>();
+                    toggleButton.field_Public_GameObject_0 = gameObject.transform.Find("ON").gameObject;
+                    Text[] btnTextsOn = toggleButton.field_Public_GameObject_0.GetComponentsInChildren<Text>();
                     btnTextsOn[3].text = display_name;
                     btnTextsOn[3].color = color;
-                    toggleButton.toggledOffButton = gameObject.transform.Find("OFF").gameObject;
-                    Text[] btnTextsOff = toggleButton.toggledOffButton.GetComponentsInChildren<Text>();
+                    toggleButton.field_Public_GameObject_1 = gameObject.transform.Find("OFF").gameObject;
+                    Text[] btnTextsOff = toggleButton.field_Public_GameObject_1.GetComponentsInChildren<Text>();
                     btnTextsOff[3].text = display_name;
                     btnTextsOff[3].color = color;
                 }
@@ -121,7 +121,7 @@ namespace OGTrustRanks
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
-            if ((__0 != null) && MelonPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank)
+            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled") && __0.showSocialRank)
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
@@ -129,12 +129,12 @@ namespace OGTrustRanks
                     TrustRanks rank = GetTrustRankEnum(__0);
                     if (rank == TrustRanks.LEGENDARY)
                     {
-                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Legendary User)" : "Legendary User");
+                        __result = "Legendary User";
                         return false;
                     }
                     else if (rank == TrustRanks.VETERAN)
                     {
-                        __result = (APIUser.IsFriendsWith(__0.id) ? "Friend (Veteran User)" : "Veteran User");
+                        __result = "Veteran User";
                         return false;
                     }
                 }
@@ -144,7 +144,7 @@ namespace OGTrustRanks
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
-            if ((__0 != null) && MelonPrefs.GetBool("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
+            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
