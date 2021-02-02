@@ -121,7 +121,7 @@ namespace OGTrustRanks
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
-            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled") && __0.showSocialRank)
+            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled"))
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
@@ -144,7 +144,7 @@ namespace OGTrustRanks
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
-            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled") && __0.showSocialRank && !APIUser.IsFriendsWith(__0.id))
+            if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled") && !APIUser.IsFriendsWith(__0.id))
             {
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
