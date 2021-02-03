@@ -40,6 +40,9 @@
     <Compile Include="OGTrustRanks.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="MelonLoader">
+      <HintPath>Libs\MelonLoader.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="Assembly-CSharp">
@@ -47,12 +50,6 @@
     </Reference>
     <Reference Include="Il2Cppmscorlib">
       <HintPath>Libs\Il2Cppmscorlib.dll</HintPath>
-    </Reference>
-    <Reference Include="MelonLoader.ModHandler">
-      <HintPath>Libs\MelonLoader.ModHandler.dll</HintPath>
-    </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>Libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="UnhollowerBaseLib">
       <HintPath>Libs\UnhollowerBaseLib.dll</HintPath>
