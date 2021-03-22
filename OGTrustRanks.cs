@@ -15,9 +15,9 @@ namespace OGTrustRanks
     public static class BuildInfo
     {
         public const string Name = "OGTrustRanks";
-        public const string Author = "Herp Derpinstine, Emilia, and dave-kun";
+        public const string Author = "Herp Derpinstine, Emilia, dave-kun, and RequiDev";
         public const string Company = "Lava Gang";
-        public const string Version = "1.0.8";
+        public const string Version = "1.0.9";
         public const string DownloadLink = "https://github.com/HerpDerpinstine/OGTrustRanks";
     }
 
