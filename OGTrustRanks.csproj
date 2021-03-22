@@ -37,9 +37,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="NetworkManagerHooks.cs" />
     <Compile Include="OGTrustRanks.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Reference Include="Il2CppSystem.Core">
+      <HintPath>Libs\Il2CppSystem.Core.dll</HintPath>
+    </Reference>
     <Reference Include="MelonLoader">
       <HintPath>Libs\MelonLoader.dll</HintPath>
       <Private>False</Private>
