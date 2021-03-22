@@ -1,3 +1,5 @@
+using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +8,7 @@ using VRC.Core;
 using MelonLoader;
 using Harmony;
 using System.Linq;
+using System;
 
 namespace OGTrustRanks
 {
@@ -31,6 +34,7 @@ namespace OGTrustRanks
         private static MelonPreferences_Entry<int> LegendaryColorRPref;
         private static MelonPreferences_Entry<int> LegendaryColorGPref;
         private static MelonPreferences_Entry<int> LegendaryColorBPref;
+        private static readonly List<APIUser> CachedApiUsers = new List<APIUser>();
 
         public override void OnApplicationStart()
         {
@@ -53,6 +57,38 @@ namespace OGTrustRanks
             ColorForRankTargetMethods.ForEach(it =>
                 Harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod("GetColorForSocialRank", BindingFlags.NonPublic | BindingFlags.Static)))
             );
+
+            MelonCoroutines.Start(InitializeNetworkHooks());
+        }
+
+        private IEnumerator InitializeNetworkHooks()
+        {
+            while (ReferenceEquals(NetworkManager.field_Internal_Static_NetworkManager_0, null)) yield return null;
+            while (ReferenceEquals(VRCAudioManager.field_Private_Static_VRCAudioManager_0, null)) yield return null;
+            while (ReferenceEquals(VRCUiManager.prop_VRCUiManager_0, null)) yield return null;
+
+            NetworkManagerHooks.Initialize();
+
+            NetworkManagerHooks.OnJoin += OnPlayerJoin;
+        }
+        public void OnPlayerJoin(Player player)
+        {
+            if (player == null)
+                return;
+            var apiUser = player.field_Private_APIUser_0;
+            if (apiUser == null)
+                return;
+
+            if (CachedApiUsers.Exists(x => x.id == apiUser.id))
+                return;
+
+            APIUser.FetchUser(apiUser.id, new Action<APIUser>(user =>
+            {
+                CachedApiUsers.Add(user);
+            }), new Action<string>(error =>
+            {
+                MelonLogger.Error($"Could not fetch APIUser object of {apiUser.displayName}-{apiUser.id}");
+            }));
         }
 
         public override void OnPreferencesSaved() => Refresh();
@@ -118,7 +154,8 @@ namespace OGTrustRanks
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
-                    TrustRanks rank = GetTrustRankEnum(__0);
+                    var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
+                    TrustRanks rank = GetTrustRankEnum(apiUser);
                     if (rank == TrustRanks.LEGENDARY)
                     {
                         __result = "Legendary User";
@@ -141,7 +178,8 @@ namespace OGTrustRanks
                 Player player = GetUserByID(__0.id);
                 if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
                 {
-                    TrustRanks rank = GetTrustRankEnum(__0);
+                    var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
+                    TrustRanks rank = GetTrustRankEnum(apiUser);
                     if (rank == TrustRanks.LEGENDARY)
                     {
                         __result = LegendaryUserColor;
