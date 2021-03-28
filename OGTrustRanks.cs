@@ -9,6 +9,7 @@ using MelonLoader;
 using Harmony;
 using System.Linq;
 using System;
+using Random = System.Random;
 
 namespace OGTrustRanks
 {
@@ -35,6 +36,8 @@ namespace OGTrustRanks
         private static MelonPreferences_Entry<int> LegendaryColorGPref;
         private static MelonPreferences_Entry<int> LegendaryColorBPref;
         private static readonly List<APIUser> CachedApiUsers = new List<APIUser>();
+        private static readonly Queue<string> UsersToFetch = new Queue<string>();
+        private static Random _random = new Random();
 
         public override void OnApplicationStart()
         {
@@ -59,6 +62,8 @@ namespace OGTrustRanks
             );
 
             MelonCoroutines.Start(InitializeNetworkHooks());
+
+            MelonCoroutines.Start(FetchAPIUsers());
         }
 
         private IEnumerator InitializeNetworkHooks()
@@ -71,6 +76,7 @@ namespace OGTrustRanks
 
             NetworkManagerHooks.OnJoin += OnPlayerJoin;
         }
+
         public void OnPlayerJoin(Player player)
         {
             if (player == null)
@@ -79,16 +85,36 @@ namespace OGTrustRanks
             if (apiUser == null)
                 return;
 
+            if (!apiUser.tags.Contains("system_trust_trusted"))
+                return;
+
             if (CachedApiUsers.Exists(x => x.id == apiUser.id))
                 return;
 
-            APIUser.FetchUser(apiUser.id, new Action<APIUser>(user =>
+            if (UsersToFetch.Contains(apiUser.id))
+                return;
+            
+            UsersToFetch.Enqueue(apiUser.id);
+        }
+
+        private static IEnumerator FetchAPIUsers()
+        {
+            while (true)
             {
-                CachedApiUsers.Add(user);
-            }), new Action<string>(error =>
-            {
-                MelonLogger.Error($"Could not fetch APIUser object of {apiUser.displayName}-{apiUser.id}");
-            }));
+                yield return new WaitForSeconds(1f);
+                while (UsersToFetch.Count > 0)
+                {
+                    var id = UsersToFetch.Dequeue();
+                    APIUser.FetchUser(id, new Action<APIUser>(user =>
+                    {
+                        CachedApiUsers.Add(user);
+                    }), new Action<string>(error =>
+                    {
+                        MelonLogger.Error($"Could not fetch APIUser object of {id}");
+                    }));
+                    yield return new WaitForSeconds(_random.Next(2, 5));
+                }
+            }
         }
 
         public override void OnPreferencesSaved() => Refresh();
