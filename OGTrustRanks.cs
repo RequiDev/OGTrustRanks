@@ -178,7 +178,7 @@ namespace OGTrustRanks
             if ((__0 != null) && MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled"))
             {
                 Player player = GetUserByID(__0.id);
-                if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
+                if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
                 {
                     var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
                     TrustRanks rank = GetTrustRankEnum(apiUser);
@@ -202,7 +202,7 @@ namespace OGTrustRanks
             if ((__0 != null) && EnabledPref.Value && !APIUser.IsFriendsWith(__0.id))
             {
                 Player player = GetUserByID(__0.id);
-                if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player.field_Internal_VRCPlayer_0) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player.field_Internal_VRCPlayer_0, null))))))
+                if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
                 {
                     var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
                     TrustRanks rank = GetTrustRankEnum(apiUser);
