@@ -16,10 +16,10 @@ namespace OGTrustRanks
     public static class BuildInfo
     {
         public const string Name = "OGTrustRanks";
-        public const string Author = "Herp Derpinstine, Emilia, dave-kun, and RequiDev";
+        public const string Author = "Herp Derpinstine, Emilia, dave-kun, and Requi";
         public const string Company = "Lava Gang";
-        public const string Version = "1.0.9";
-        public const string DownloadLink = "https://github.com/HerpDerpinstine/OGTrustRanks";
+        public const string Version = "1.1.0";
+        public const string DownloadLink = "https://github.com/RequiDev/OGTrustRanks";
     }
 
     public class OGTrustRanks : MelonMod
