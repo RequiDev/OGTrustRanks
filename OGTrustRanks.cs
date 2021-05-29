@@ -9,6 +9,7 @@ using MelonLoader;
 using Harmony;
 using System.Linq;
 using System;
+using UnhollowerRuntimeLib.XrefScans;
 using Random = System.Random;
 
 namespace OGTrustRanks
@@ -38,6 +39,7 @@ namespace OGTrustRanks
         private static readonly List<APIUser> CachedApiUsers = new List<APIUser>();
         private static readonly Queue<string> UsersToFetch = new Queue<string>();
         private static readonly Random Random = new Random();
+        private static MethodBase _showSocialRankMethod;
 
         public override void OnApplicationStart()
         {
@@ -60,6 +62,35 @@ namespace OGTrustRanks
             colorForRankTargetMethods.ForEach(it =>
                 Harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)))
             );
+
+            _showSocialRankMethod = XrefScanner.XrefScan(friendlyNameTargetMethod).Single(x =>
+            {
+                if (x.Type != XrefType.Method)
+                    return false;
+
+                var m = x.TryResolve();
+                if (m == null)
+                    return false;
+
+                if (!m.IsStatic)
+                    return false;
+
+                if (m.DeclaringType != typeof(VRCPlayer))
+                    return false;
+
+                var asInfo = m as MethodInfo;
+                if (asInfo == null)
+                    return false;
+
+                if (asInfo.ReturnType != typeof(bool))
+                    return false;
+
+                if (m.GetParameters().Length != 1 && m.GetParameters()[0].ParameterType != typeof(APIUser))
+                    return false;
+
+                return XrefScanner.XrefScan(m).Count() > 1;
+            }).TryResolve();
+            
 
             MelonCoroutines.Start(InitializeNetworkHooks());
 
@@ -184,11 +215,15 @@ namespace OGTrustRanks
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
-            if ((__0 == null) || !_enabledPref.Value) return true;
-            if (!__0.showSocialRank) return true;
-            
+            if (__0 == null || !_enabledPref.Value) return true;
+
             var player = GetUserById(__0.id);
-            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
+            if (player == null)
+                return true;
+
+            var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
+            if (!showSocialRank) return true;
+            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
             {
                 var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
                 var rank = GetTrustRankEnum(apiUser);
@@ -211,10 +246,16 @@ namespace OGTrustRanks
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
-            if ((__0 == null) || !_enabledPref.Value || APIUser.IsFriendsWith(__0.id)) return true;
+            if (__0 == null || !_enabledPref.Value || APIUser.IsFriendsWith(__0.id)) return true;
 
             var player = GetUserById(__0.id);
-            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
+            if (player == null)
+                return true;
+
+            var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] {__0});
+            if (!showSocialRank) return true;
+
+            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
             {
                 var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
                 var rank = GetTrustRankEnum(apiUser);
@@ -239,9 +280,6 @@ namespace OGTrustRanks
         {
             if (user?.tags == null || (user.tags.Count <= 0))
                 return TrustRanks.Ignore;
-            if (!user.showSocialRank)
-                return TrustRanks.Ignore;
-
             if (user.tags.Contains("system_legend") && user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Legendary;
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
