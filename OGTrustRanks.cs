@@ -184,7 +184,8 @@ namespace OGTrustRanks
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
         {
-            if ((__0 == null) || !MelonPreferences.GetEntryValue<bool>("ogtrustranks", "enabled")) return true;
+            if ((__0 == null) || !_enabledPref.Value) return true;
+            if (!__0.showSocialRank) return true;
             
             var player = GetUserById(__0.id);
             if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
@@ -211,7 +212,7 @@ namespace OGTrustRanks
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
             if ((__0 == null) || !_enabledPref.Value || APIUser.IsFriendsWith(__0.id)) return true;
-            
+
             var player = GetUserById(__0.id);
             if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player) || !(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
             {
@@ -238,6 +239,9 @@ namespace OGTrustRanks
         {
             if (user?.tags == null || (user.tags.Count <= 0))
                 return TrustRanks.Ignore;
+            if (!user.showSocialRank)
+                return TrustRanks.Ignore;
+
             if (user.tags.Contains("system_legend") && user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Legendary;
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
