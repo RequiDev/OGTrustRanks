@@ -25,10 +25,10 @@ namespace OGTrustRanks
 
     public class OGTrustRanks : MelonMod
     {
-        private static readonly PropertyInfo VRCPlayer_ModTag = null;
-        private static Color _trustedUserColor;
         private static Color _veteranUserColor;
         private static Color _legendaryUserColor;
+        private static Color _knownUserColor;
+        private static Color _trustedUserColor;
         private static MelonPreferences_Entry<bool> _enabledPref;
         private static MelonPreferences_Entry<int> _veteranColorRPref;
         private static MelonPreferences_Entry<int> _veteranColorGPref;
@@ -36,23 +36,44 @@ namespace OGTrustRanks
         private static MelonPreferences_Entry<int> _legendaryColorRPref;
         private static MelonPreferences_Entry<int> _legendaryColorGPref;
         private static MelonPreferences_Entry<int> _legendaryColorBPref;
+        private static MelonPreferences_Entry<int> _trustedColorRPref;
+        private static MelonPreferences_Entry<int> _trustedColorGPref;
+        private static MelonPreferences_Entry<int> _trustedColorBPref;
+        private static MelonPreferences_Entry<int> _knownColorRPref;
+        private static MelonPreferences_Entry<int> _knownColorGPref;
+        private static MelonPreferences_Entry<int> _knownColorBPref;
+        private static MelonPreferences_Entry<bool> _reloadAvatar;
         private static readonly List<APIUser> CachedApiUsers = new List<APIUser>();
         private static readonly Queue<string> UsersToFetch = new Queue<string>();
         private static readonly Random Random = new Random();
+
         private static MethodBase _showSocialRankMethod;
+        private static MethodInfo _reloadAvatarMethod;
 
         public override void OnApplicationStart()
         {
             var cat = MelonPreferences.CreateCategory("ogtrustranks", "OGTrustRanks");
             _enabledPref = (MelonPreferences_Entry<bool>)cat.CreateEntry("enabled", true, "Enabled");
+
+            _knownColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
+            _knownColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
+            _knownColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
+
+            _trustedColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
+            _trustedColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorG", 66, "Green component of the Trusted color");
+            _trustedColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorB", 230, "Blue component of the Trusted color");
+            
             _veteranColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorR", 171, "Red component of the Veteran color");
             _veteranColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorG", 205, "Green component of the Veteran color");
             _veteranColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorB", 239, "Blue component of the Veteran color");
+
             _legendaryColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
             _legendaryColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
             _legendaryColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
 
-            _trustedUserColor = new Color(0.5058824f, 0.2627451f, 0.9019608f);
+            _reloadAvatar = (MelonPreferences_Entry<bool>) cat.CreateEntry("ReloadAvatar", false,
+                "Reload avatars when fetched rank to update colors for BTKANameplateMod");
+
             UpdateColors();
 
             var friendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().FirstOrDefault(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser"));
@@ -69,20 +90,11 @@ namespace OGTrustRanks
                     return false;
 
                 var m = x.TryResolve();
-                if (m == null)
-                    return false;
-
-                if (!m.IsStatic)
-                    return false;
-
-                if (m.DeclaringType != typeof(VRCPlayer))
+                if (m == null || !m.IsStatic || m.DeclaringType != typeof(VRCPlayer))
                     return false;
 
                 var asInfo = m as MethodInfo;
-                if (asInfo == null)
-                    return false;
-
-                if (asInfo.ReturnType != typeof(bool))
+                if (asInfo == null || asInfo.ReturnType != typeof(bool))
                     return false;
 
                 if (m.GetParameters().Length != 1 && m.GetParameters()[0].ParameterType != typeof(APIUser))
@@ -90,10 +102,14 @@ namespace OGTrustRanks
 
                 return XrefScanner.XrefScan(m).Count() > 1;
             }).TryResolve();
-            
+
+            // Thanks loukylor
+            _reloadAvatarMethod = typeof(VRCPlayer).GetMethods().First(mi =>
+                mi.Name.StartsWith("Method_Private_Void_Boolean_") && mi.Name.Length < 31 &&
+                mi.GetParameters().Any(pi => pi.IsOptional));
+
 
             MelonCoroutines.Start(InitializeNetworkHooks());
-
             MelonCoroutines.Start(FetchAPIUsers());
         }
 
@@ -104,7 +120,6 @@ namespace OGTrustRanks
             while (ReferenceEquals(VRCUiManager.prop_VRCUiManager_0, null)) yield return null;
 
             NetworkManagerHooks.Initialize();
-
             NetworkManagerHooks.OnJoin += OnPlayerJoin;
         }
 
@@ -139,6 +154,11 @@ namespace OGTrustRanks
                     APIUser.FetchUser(id, new Action<APIUser>(user =>
                     {
                         CachedApiUsers.Add(user);
+                        if (_reloadAvatar.Value)
+                        {
+                            var player = GetPlayerByUserId(id);
+                            _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] {true});
+                        }
                     }), new Action<string>(error =>
                     {
                         MelonLogger.Error($"Could not fetch APIUser object of {id}");
@@ -160,6 +180,8 @@ namespace OGTrustRanks
 
         private static void UpdateColors()
         {
+            _knownUserColor = new Color(_knownColorRPref.Value / 255.0f, _knownColorGPref.Value / 255.0f, _knownColorBPref.Value / 255.0f);
+            _trustedUserColor = new Color(_trustedColorRPref.Value / 255.0f, _trustedColorGPref.Value / 255.0f, _trustedColorBPref.Value / 255.0f);
             _veteranUserColor = new Color(_veteranColorRPref.Value / 255.0f, _veteranColorGPref.Value / 255.0f, _veteranColorBPref.Value / 255.0f);
             _legendaryUserColor = new Color(_legendaryColorRPref.Value / 255.0f, _legendaryColorGPref.Value / 255.0f, _legendaryColorBPref.Value / 255.0f);
         }
@@ -174,9 +196,13 @@ namespace OGTrustRanks
             var component = quickMenuGameObject.transform.Find("Toggle_States_ShowTrustRank_Colors").GetComponent<UiToggleButton>();
             if (component == null)
                 return;
+
+            var rank = GetTrustRankEnum(APIUser.CurrentUser);
+            if (rank == TrustRanks.Ignore)
+                return;
+
             if (_enabledPref.Value)
             {
-                var rank = GetTrustRankEnum(APIUser.CurrentUser);
                 switch (rank)
                 {
                     case TrustRanks.Veteran:
@@ -185,31 +211,37 @@ namespace OGTrustRanks
                     case TrustRanks.Legendary:
                         SetupRankDisplay(component, "Legendary User", _legendaryUserColor);
                         break;
-                    case TrustRanks.Ignore:
+                    case TrustRanks.Known:
+                        SetupRankDisplay(component, "Known User", _knownUserColor);
+                        break;
+                    case TrustRanks.Trusted:
+                        SetupRankDisplay(component, "Trusted User", _trustedUserColor);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
             }
             else
-                SetupRankDisplay(component, "Trusted User", _trustedUserColor);
+            {
+                SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User", rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
+            }
         }
 
-        private static void SetupRankDisplay(UiToggleButton toggleButton, string display_name, Color color)
+        private static void SetupRankDisplay(UiToggleButton toggleButton, string displayName, Color color)
         {
             var displayTransform = toggleButton.transform.Find("TRUSTED");
             if (displayTransform == null)
                 return;
             var gameObject = displayTransform.gameObject;
-            if ((gameObject == null) || (gameObject.gameObject == null))
+            if (gameObject == null)
                 return;
-            toggleButton.field_Public_GameObject_0 = gameObject.transform.Find("ON").gameObject;
+            toggleButton.field_Public_GameObject_0 = displayTransform.Find("ON").gameObject;
             Text[] btnTextsOn = toggleButton.field_Public_GameObject_0.GetComponentsInChildren<Text>();
-            btnTextsOn[3].text = display_name;
+            btnTextsOn[3].text = displayName;
             btnTextsOn[3].color = color;
-            toggleButton.field_Public_GameObject_1 = gameObject.transform.Find("OFF").gameObject;
+            toggleButton.field_Public_GameObject_1 = displayTransform.Find("OFF").gameObject;
             Text[] btnTextsOff = toggleButton.field_Public_GameObject_1.GetComponentsInChildren<Text>();
-            btnTextsOff[3].text = display_name;
+            btnTextsOff[3].text = displayName;
             btnTextsOff[3].color = color;
         }
 
@@ -217,88 +249,91 @@ namespace OGTrustRanks
         {
             if (__0 == null || !_enabledPref.Value) return true;
 
-            var player = GetUserById(__0.id);
-            if (player == null)
-                return true;
-
-            var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
-            if (!showSocialRank) return true;
-            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
+            if (GetPlayerByUserId(__0.id) != null)
             {
-                var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
-                var rank = GetTrustRankEnum(apiUser);
-                switch (rank)
+                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
+                if (!showSocialRank)
                 {
-                    case TrustRanks.Legendary:
-                        __result = "Legendary User";
-                        return false;
-                    case TrustRanks.Veteran:
-                        __result = "Veteran User";
-                        return false;
-                    case TrustRanks.Ignore:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    return true;
                 }
             }
-            return true;
+            
+            var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
+            var rank = GetTrustRankEnum(apiUser);
+
+            if (rank == TrustRanks.Ignore) return true;
+
+            __result = $"{rank} User";
+            return false;
         }
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
             if (__0 == null || !_enabledPref.Value || APIUser.IsFriendsWith(__0.id)) return true;
 
-            var player = GetUserById(__0.id);
-            if (player == null)
-                return true;
-
-            var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] {__0});
-            if (!showSocialRank) return true;
-
-            if (!__0.hasVIPAccess || (__0.hasModerationPowers && ((!(null != player._vrcplayer) ? !__0.showModTag : string.IsNullOrEmpty((string)VRCPlayer_ModTag.GetGetMethod().Invoke(player._vrcplayer, null))))))
+            if (GetPlayerByUserId(__0.id) != null)
             {
-                var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
-                var rank = GetTrustRankEnum(apiUser);
-                switch (rank)
+                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
+                if (!showSocialRank)
                 {
-                    case TrustRanks.Legendary:
-                        __result = _legendaryUserColor;
-                        return false;
-                    case TrustRanks.Veteran:
-                        __result = _veteranUserColor;
-                        return false;
-                    case TrustRanks.Ignore:
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
+                    return true;
                 }
+            }
+            
+            var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
+            var rank = GetTrustRankEnum(apiUser);
+            switch (rank)
+            {
+                case TrustRanks.Known:
+                    __result = _knownUserColor;
+                    return false;
+                case TrustRanks.Trusted:
+                    __result = _trustedUserColor;
+                    return false;
+                case TrustRanks.Veteran:
+                    __result = _veteranUserColor;
+                    return false;
+                case TrustRanks.Legendary:
+                    __result = _legendaryUserColor;
+                    return false;
+                case TrustRanks.Ignore:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
             }
             return true;
         }
 
         private static TrustRanks GetTrustRankEnum(APIUser user)
         {
-            if (user?.tags == null || (user.tags.Count <= 0))
+            if (user?.tags == null || user.tags.Count <= 0)
                 return TrustRanks.Ignore;
+
             if (user.tags.Contains("system_legend") && user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Legendary;
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Veteran;
+            if (user.tags.Contains("system_trust_veteran") && user.tags.Contains("system_trust_trusted"))
+                return TrustRanks.Trusted;
+            if (user.tags.Contains("system_trust_trusted") && user.tags.Contains("system_trust_known"))
+                return TrustRanks.Known;
             return TrustRanks.Ignore;
         }
 
         private enum TrustRanks
         {
             Ignore,
+            Known,
+            Trusted,
             Veteran,
-            Legendary
+            Legendary,
         }
 
-        private static Player GetUserById(string userId)
+        private static Player GetPlayerByUserId(string userId)
         {
-            foreach (var ply in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
-                if ((ply.prop_APIUser_0 != null) && (ply.prop_APIUser_0.id == userId))
-                    return ply;
+            foreach (var player in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
+                if (player.prop_APIUser_0 != null && player.prop_APIUser_0.id == userId)
+                    return player;
             return null;
         }
     }
