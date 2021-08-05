@@ -6,7 +6,7 @@ using UnityEngine.UI;
 using VRC;
 using VRC.Core;
 using MelonLoader;
-using Harmony;
+using HarmonyLib;
 using System.Linq;
 using System;
 using UnhollowerRuntimeLib.XrefScans;
@@ -76,12 +76,14 @@ namespace OGTrustRanks
 
             UpdateColors();
 
+            var harmony = new HarmonyLib.Harmony("OGTrustRanks");
+
             var friendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().FirstOrDefault(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser"));
-            Harmony.Patch(friendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
+            harmony.Patch(friendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
 
             var colorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
             colorForRankTargetMethods.ForEach(it =>
-                Harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)))
+                harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)))
             );
 
             _showSocialRankMethod = XrefScanner.XrefScan(friendlyNameTargetMethod).Single(x =>
