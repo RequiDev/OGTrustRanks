@@ -1,7 +1,7 @@
 # OGTrustRanks
 Mod for VRChat using MelonLoader
 
-Brings back Veteran and Legendary Trust Ranks to the game.  
+Utilizes hidden vrchat API tags to show different types of player/trust ranks.
 You can edit the Colors for Veteran and Legendary in your Mod Preferences.
 
 DISCLAIMER: Only shows Veteran and Legendary ranks locally.
