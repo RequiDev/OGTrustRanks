@@ -25,11 +25,11 @@ namespace OGTrustRanks
 
     public class OGTrustRanks : MelonMod
     {
-        private static Color _veteranUserColor;
+        private static Color _vrchatTeamColor;
         private static Color _legendColor;
+        private static Color _veteranUserColor;
         private static Color _knownUserColor;
         private static Color _trustedUserColor;
-        private static Color _vrchatTeamColor;
         private static MelonPreferences_Entry<bool> _enabledPref;
         private static MelonPreferences_Entry<int> _vrchatTeamColorRPref;
         private static MelonPreferences_Entry<int> _vrchatTeamColorGPref;
@@ -60,7 +60,7 @@ namespace OGTrustRanks
             _enabledPref = cat.CreateEntry("enabled", true, "Enabled");
 
             _knownColorRPref = cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
-            _knownColorGPref = cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
+            _knownColorGPref = cat.CreateEntry("KnownColorG", 123, "Green component of the Known color");
             _knownColorBPref = cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
 
             _trustedColorRPref = cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
@@ -316,7 +316,7 @@ namespace OGTrustRanks
 
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
-            if (rank <= (TrustRanks) 3 && apiUser.tags.Contains("system_legend"))
+            if (rank <= (TrustRanks)3 && apiUser.tags.Contains("system_legend"))
             {
                 __result = _legendColor;
                 return false;
@@ -327,14 +327,14 @@ namespace OGTrustRanks
                 case TrustRanks.VRChatTeam:
                     __result = _vrchatTeamColor;
                     return false;
-                case TrustRanks.Known:
-                    __result = _knownUserColor;
+                case TrustRanks.Veteran:
+                    __result = _veteranUserColor;
                     return false;
                 case TrustRanks.Trusted:
                     __result = _trustedUserColor;
                     return false;
-                case TrustRanks.Veteran:
-                    __result = _veteranUserColor;
+                case TrustRanks.Known:
+                    __result = _knownUserColor;
                     return false;
                 case TrustRanks.Ignore:
                     break;
@@ -353,13 +353,13 @@ namespace OGTrustRanks
             if (user.hasSuperPowers || user.hasModerationPowers || user.hasVIPAccess || user.hasScriptingAccess)
                 return TrustRanks.VRChatTeam;
 
-            if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
+            if (user.hasLegendTrustLevel)
                 return TrustRanks.Veteran;
 
-            if (user.tags.Contains("system_trust_veteran") && user.tags.Contains("system_trust_trusted"))
+            if (user.hasVeteranTrustLevel)
                 return TrustRanks.Trusted;
 
-            if (user.tags.Contains("system_trust_trusted") && user.tags.Contains("system_trust_known"))
+            if (user.hasTrustedTrustLevel)
                 return TrustRanks.Known;
 
             return TrustRanks.Ignore;
