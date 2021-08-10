@@ -1,5 +1,5 @@
-﻿using System.Reflection;
-using MelonLoader;
+﻿using MelonLoader;
+using System.Reflection;
 using BuildInfo = OGTrustRanks.BuildInfo;
 
 [assembly: AssemblyTitle(BuildInfo.Name)]
