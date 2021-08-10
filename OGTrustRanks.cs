@@ -29,13 +29,17 @@ namespace OGTrustRanks
         private static Color _legendColor;
         private static Color _knownUserColor;
         private static Color _trustedUserColor;
+        private static Color _vrchatTeamColor;
         private static MelonPreferences_Entry<bool> _enabledPref;
-        private static MelonPreferences_Entry<int> _veteranColorRPref;
-        private static MelonPreferences_Entry<int> _veteranColorGPref;
-        private static MelonPreferences_Entry<int> _veteranColorBPref;
+        private static MelonPreferences_Entry<int> _vrchatTeamColorRPref;
+        private static MelonPreferences_Entry<int> _vrchatTeamColorGPref;
+        private static MelonPreferences_Entry<int> _vrchatTeamColorBPref;
         private static MelonPreferences_Entry<int> _legendaryColorRPref;
         private static MelonPreferences_Entry<int> _legendaryColorGPref;
         private static MelonPreferences_Entry<int> _legendaryColorBPref;
+        private static MelonPreferences_Entry<int> _veteranColorRPref;
+        private static MelonPreferences_Entry<int> _veteranColorGPref;
+        private static MelonPreferences_Entry<int> _veteranColorBPref;
         private static MelonPreferences_Entry<int> _trustedColorRPref;
         private static MelonPreferences_Entry<int> _trustedColorGPref;
         private static MelonPreferences_Entry<int> _trustedColorBPref;
@@ -70,6 +74,10 @@ namespace OGTrustRanks
             _legendaryColorRPref = cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
             _legendaryColorGPref = cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
             _legendaryColorBPref = cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
+
+            _vrchatTeamColorRPref = cat.CreateEntry("VRChatTeamColorR", 255, "Red component of the VRChat Team color");
+            _vrchatTeamColorGPref = cat.CreateEntry("VRChatTeamColorG", 38, "Green component of the VRChat Team color");
+            _vrchatTeamColorBPref = cat.CreateEntry("VRChatTeamColorB", 38, "Blue component of the VRChat Team color");
 
             _reloadAvatar = cat.CreateEntry("ReloadAvatar", false,
                 "Reload avatars when fetched rank to update colors for BTKANameplateMod");
@@ -207,6 +215,8 @@ namespace OGTrustRanks
                 _veteranColorBPref.Value / 255.0f);
             _legendColor = new Color(_legendaryColorRPref.Value / 255.0f, _legendaryColorGPref.Value / 255.0f,
                 _legendaryColorBPref.Value / 255.0f);
+            _vrchatTeamColor = new Color(_vrchatTeamColorRPref.Value / 255.0f, _vrchatTeamColorGPref.Value / 255.0f,
+                _vrchatTeamColorBPref.Value / 255.0f);
         }
 
         private static void SetupTrustRankButton()
@@ -226,13 +236,11 @@ namespace OGTrustRanks
                 return;
 
             if (_enabledPref.Value)
+            {
                 switch (rank)
                 {
                     case TrustRanks.Veteran:
                         SetupRankDisplay(component, "Veteran User", _veteranUserColor);
-                        break;
-                    case TrustRanks.Legend:
-                        SetupRankDisplay(component, "Legend", _legendColor);
                         break;
                     case TrustRanks.Known:
                         SetupRankDisplay(component, "Known User", _knownUserColor);
@@ -243,6 +251,7 @@ namespace OGTrustRanks
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
+            }
             else
                 SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User",
                     rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
@@ -281,14 +290,19 @@ namespace OGTrustRanks
 
             if (rank == TrustRanks.Ignore) return true;
 
-            __result = $"{rank} User";
-
-            if (rank == TrustRanks.Legend)
-            {
-                __result = $"Veteran User + {rank}";
-            }
+            __result = GetRank(apiUser, rank, ref __result);
             return false;
         }
+
+        private static string GetRank(APIUser apiUser, TrustRanks rank, ref string __result)
+        {
+            if (apiUser.HasTag("system_legend"))
+                return __result = $"{rank} + Legend";
+            if (rank >= (TrustRanks) 4)
+               return __result = rank.ToString();
+            return __result = $"{rank} User";
+        }
+
 
         private static bool GetColorForSocialRank(APIUser __0, ref Color __result)
         {
@@ -302,8 +316,19 @@ namespace OGTrustRanks
 
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
+            if (rank <= (TrustRanks) 3 && apiUser.tags.Contains("system_legend"))
+            {
+                __result = _legendColor;
+                return false;
+            }
             switch (rank)
             {
+                case TrustRanks.Developer:
+                    __result = _vrchatTeamColor;
+                    return false;
+                case TrustRanks.Moderator:
+                    __result = _vrchatTeamColor;
+                    return false;
                 case TrustRanks.Known:
                     __result = _knownUserColor;
                     return false;
@@ -313,15 +338,11 @@ namespace OGTrustRanks
                 case TrustRanks.Veteran:
                     __result = _veteranUserColor;
                     return false;
-                case TrustRanks.Legend:
-                    __result = _legendColor;
-                    return false;
                 case TrustRanks.Ignore:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
-
             return true;
         }
 
@@ -330,14 +351,21 @@ namespace OGTrustRanks
             if (user?.tags == null || user.tags.Count <= 0)
                 return TrustRanks.Ignore;
 
-            if (user.tags.Contains("system_legend"))
-                return TrustRanks.Legend;
+            if (user.hasScriptingAccess)
+                return TrustRanks.Developer;
+
+            if (user.hasSuperPowers || user.hasModerationPowers || user.hasVIPAccess)
+                return TrustRanks.Moderator;
+
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Veteran;
+
             if (user.tags.Contains("system_trust_veteran") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Trusted;
+
             if (user.tags.Contains("system_trust_trusted") && user.tags.Contains("system_trust_known"))
                 return TrustRanks.Known;
+
             return TrustRanks.Ignore;
         }
 
@@ -355,7 +383,8 @@ namespace OGTrustRanks
             Known,
             Trusted,
             Veteran,
-            Legend
+            Moderator,
+            Developer
         }
     }
 }
