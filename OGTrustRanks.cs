@@ -1,10 +1,10 @@
-using HarmonyLib;
-using MelonLoader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using HarmonyLib;
+using MelonLoader;
 using UnhollowerRuntimeLib.XrefScans;
 using UnityEngine;
 using UnityEngine.UI;
@@ -176,7 +176,7 @@ namespace OGTrustRanks
                         if (_reloadAvatar.Value)
                         {
                             var player = GetPlayerByUserId(id);
-                            _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] { true });
+                            _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] {true});
                         }
                     }), new Action<string>(error => { MelonLogger.Error($"Could not fetch APIUser object of {id}"); }));
                     yield return new WaitForSeconds(Random.Next(2, 5));
@@ -236,7 +236,6 @@ namespace OGTrustRanks
                 return;
 
             if (_enabledPref.Value)
-            {
                 switch (rank)
                 {
                     case TrustRanks.Veteran:
@@ -251,7 +250,6 @@ namespace OGTrustRanks
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-            }
             else
                 SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User",
                     rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
@@ -281,7 +279,7 @@ namespace OGTrustRanks
 
             if (GetPlayerByUserId(__0.id) != null)
             {
-                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
+                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
                 if (!showSocialRank) return true;
             }
 
@@ -296,10 +294,12 @@ namespace OGTrustRanks
 
         private static string GetRank(APIUser apiUser, TrustRanks rank, ref string __result)
         {
-            if (rank <= (TrustRanks)3 && apiUser.HasTag("system_legend"))
+            if (rank <= (TrustRanks) 3 && apiUser.HasTag("system_legend"))
                 return __result = $"{rank} User + Legend";
-            if (rank >= (TrustRanks)4)
+
+            if (rank == TrustRanks.VRChatTeam)
                 return __result = "VRChat Team";
+
             return __result = $"{rank} User";
         }
 
@@ -310,17 +310,18 @@ namespace OGTrustRanks
 
             if (GetPlayerByUserId(__0.id) != null)
             {
-                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
+                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
                 if (!showSocialRank) return true;
             }
 
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
-            if (rank <= (TrustRanks)3 && apiUser.tags.Contains("system_legend"))
+            if (rank <= (TrustRanks) 3 && apiUser.tags.Contains("system_legend"))
             {
                 __result = _legendColor;
                 return false;
             }
+
             switch (rank)
             {
                 case TrustRanks.VRChatTeam:
@@ -340,6 +341,7 @@ namespace OGTrustRanks
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             return true;
         }
 
