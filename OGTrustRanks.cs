@@ -297,9 +297,9 @@ namespace OGTrustRanks
         private static string GetRank(APIUser apiUser, TrustRanks rank, ref string __result)
         {
             if (rank <= (TrustRanks)3 && apiUser.HasTag("system_legend"))
-                return __result = $"{rank} + Legend";
+                return __result = $"{rank} User + Legend";
             if (rank >= (TrustRanks)4)
-                return __result = rank.ToString();
+                return __result = "VRChat Team";
             return __result = $"{rank} User";
         }
 
@@ -323,10 +323,7 @@ namespace OGTrustRanks
             }
             switch (rank)
             {
-                case TrustRanks.Developer:
-                    __result = _vrchatTeamColor;
-                    return false;
-                case TrustRanks.Moderator:
+                case TrustRanks.VRChatTeam:
                     __result = _vrchatTeamColor;
                     return false;
                 case TrustRanks.Known:
@@ -351,11 +348,8 @@ namespace OGTrustRanks
             if (user?.tags == null || user.tags.Count <= 0)
                 return TrustRanks.Ignore;
 
-            if (user.hasScriptingAccess)
-                return TrustRanks.Developer;
-
-            if (user.hasSuperPowers || user.hasModerationPowers || user.hasVIPAccess)
-                return TrustRanks.Moderator;
+            if (user.hasSuperPowers || user.hasModerationPowers || user.hasVIPAccess || user.hasScriptingAccess)
+                return TrustRanks.VRChatTeam;
 
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Veteran;
@@ -383,8 +377,7 @@ namespace OGTrustRanks
             Known,
             Trusted,
             Veteran,
-            Moderator,
-            Developer
+            VRChatTeam
         }
     }
 }
