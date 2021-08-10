@@ -40,8 +40,10 @@ namespace OGTrustRanks
             if (_isInitialized) return;
             if (ReferenceEquals(NetworkManager.field_Internal_Static_NetworkManager_0, null)) return;
 
-            var field0 = NetworkManager.field_Internal_Static_NetworkManager_0.field_Internal_VRCEventDelegate_1_Player_0;
-            var field1 = NetworkManager.field_Internal_Static_NetworkManager_0.field_Internal_VRCEventDelegate_1_Player_1;
+            var field0 = NetworkManager.field_Internal_Static_NetworkManager_0
+                .field_Internal_VRCEventDelegate_1_Player_0;
+            var field1 = NetworkManager.field_Internal_Static_NetworkManager_0
+                .field_Internal_VRCEventDelegate_1_Player_1;
 
             AddDelegate(field0, EventHandlerA);
             AddDelegate(field1, EventHandlerB);

@@ -1,15 +1,15 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
+using HarmonyLib;
+using MelonLoader;
+using UnhollowerRuntimeLib.XrefScans;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC;
 using VRC.Core;
-using MelonLoader;
-using HarmonyLib;
-using System.Linq;
-using System;
-using UnhollowerRuntimeLib.XrefScans;
 using Random = System.Random;
 
 namespace OGTrustRanks
@@ -19,14 +19,14 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine, Emilia, dave-kun, and Requi";
         public const string Company = "Lava Gang";
-        public const string Version = "1.1.4";
+        public const string Version = "1.1.5";
         public const string DownloadLink = "https://github.com/RequiDev/OGTrustRanks";
     }
 
     public class OGTrustRanks : MelonMod
     {
         private static Color _veteranUserColor;
-        private static Color _legendaryUserColor;
+        private static Color _legendColor;
         private static Color _knownUserColor;
         private static Color _trustedUserColor;
         private static MelonPreferences_Entry<bool> _enabledPref;
@@ -53,37 +53,46 @@ namespace OGTrustRanks
         public override void OnApplicationStart()
         {
             var cat = MelonPreferences.CreateCategory("ogtrustranks", "OGTrustRanks");
-            _enabledPref = (MelonPreferences_Entry<bool>)cat.CreateEntry("enabled", true, "Enabled");
+            _enabledPref = cat.CreateEntry("enabled", true, "Enabled");
 
-            _knownColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
-            _knownColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
-            _knownColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
+            _knownColorRPref = cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
+            _knownColorGPref = cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
+            _knownColorBPref = cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
 
-            _trustedColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
-            _trustedColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorG", 66, "Green component of the Trusted color");
-            _trustedColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorB", 230, "Blue component of the Trusted color");
-            
-            _veteranColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorR", 171, "Red component of the Veteran color");
-            _veteranColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorG", 205, "Green component of the Veteran color");
-            _veteranColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorB", 239, "Blue component of the Veteran color");
+            _trustedColorRPref = cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
+            _trustedColorGPref = cat.CreateEntry("TrustedColorG", 66, "Green component of the Trusted color");
+            _trustedColorBPref = cat.CreateEntry("TrustedColorB", 230, "Blue component of the Trusted color");
 
-            _legendaryColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
-            _legendaryColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
-            _legendaryColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
+            _veteranColorRPref = cat.CreateEntry("VeteranColorR", 255, "Red component of the Veteran color");
+            _veteranColorGPref = cat.CreateEntry("VeteranColorG", 208, "Green component of the Veteran color");
+            _veteranColorBPref = cat.CreateEntry("VeteranColorB", 0, "Blue component of the Veteran color");
 
-            _reloadAvatar = (MelonPreferences_Entry<bool>) cat.CreateEntry("ReloadAvatar", false,
+            _legendaryColorRPref = cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
+            _legendaryColorGPref = cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
+            _legendaryColorBPref = cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
+
+            _reloadAvatar = cat.CreateEntry("ReloadAvatar", false,
                 "Reload avatars when fetched rank to update colors for BTKANameplateMod");
 
             UpdateColors();
 
             var harmony = new HarmonyLib.Harmony("OGTrustRanks");
 
-            var friendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().FirstOrDefault(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser"));
-            harmony.Patch(friendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
+            var friendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().FirstOrDefault(it =>
+                !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") &&
+                it.GetParameters().Length == 1 &&
+                it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser"));
+            harmony.Patch(friendlyNameTargetMethod,
+                new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank),
+                    BindingFlags.NonPublic | BindingFlags.Static)));
 
-            var colorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
+            var colorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it =>
+                it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 &&
+                it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
             colorForRankTargetMethods.ForEach(it =>
-                harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)))
+                harmony.Patch(it,
+                    new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank),
+                        BindingFlags.NonPublic | BindingFlags.Static)))
             );
 
             _showSocialRankMethod = XrefScanner.XrefScan(friendlyNameTargetMethod).Single(x =>
@@ -112,7 +121,7 @@ namespace OGTrustRanks
 
 
             MelonCoroutines.Start(InitializeNetworkHooks());
-            MelonCoroutines.Start(FetchAPIUsers());
+            MelonCoroutines.Start(FetchApiUsers());
         }
 
         private IEnumerator InitializeNetworkHooks()
@@ -141,11 +150,11 @@ namespace OGTrustRanks
 
             if (UsersToFetch.Contains(apiUser.id))
                 return;
-            
+
             UsersToFetch.Enqueue(apiUser.id);
         }
 
-        private static IEnumerator FetchAPIUsers()
+        private static IEnumerator FetchApiUsers()
         {
             while (true)
             {
@@ -161,18 +170,26 @@ namespace OGTrustRanks
                             var player = GetPlayerByUserId(id);
                             _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] {true});
                         }
-                    }), new Action<string>(error =>
-                    {
-                        MelonLogger.Error($"Could not fetch APIUser object of {id}");
-                    }));
+                    }), new Action<string>(error => { MelonLogger.Error($"Could not fetch APIUser object of {id}"); }));
                     yield return new WaitForSeconds(Random.Next(2, 5));
                 }
             }
         }
 
-        public override void OnPreferencesSaved() => Refresh();
-        public override void OnPreferencesLoaded() => Refresh();
-        public override void OnSceneWasInitialized(int buildindex, string name) => Refresh();
+        public override void OnPreferencesSaved()
+        {
+            Refresh();
+        }
+
+        public override void OnPreferencesLoaded()
+        {
+            Refresh();
+        }
+
+        public override void OnSceneWasInitialized(int buildindex, string name)
+        {
+            Refresh();
+        }
 
         private static void Refresh()
         {
@@ -182,10 +199,14 @@ namespace OGTrustRanks
 
         private static void UpdateColors()
         {
-            _knownUserColor = new Color(_knownColorRPref.Value / 255.0f, _knownColorGPref.Value / 255.0f, _knownColorBPref.Value / 255.0f);
-            _trustedUserColor = new Color(_trustedColorRPref.Value / 255.0f, _trustedColorGPref.Value / 255.0f, _trustedColorBPref.Value / 255.0f);
-            _veteranUserColor = new Color(_veteranColorRPref.Value / 255.0f, _veteranColorGPref.Value / 255.0f, _veteranColorBPref.Value / 255.0f);
-            _legendaryUserColor = new Color(_legendaryColorRPref.Value / 255.0f, _legendaryColorGPref.Value / 255.0f, _legendaryColorBPref.Value / 255.0f);
+            _knownUserColor = new Color(_knownColorRPref.Value / 255.0f, _knownColorGPref.Value / 255.0f,
+                _knownColorBPref.Value / 255.0f);
+            _trustedUserColor = new Color(_trustedColorRPref.Value / 255.0f, _trustedColorGPref.Value / 255.0f,
+                _trustedColorBPref.Value / 255.0f);
+            _veteranUserColor = new Color(_veteranColorRPref.Value / 255.0f, _veteranColorGPref.Value / 255.0f,
+                _veteranColorBPref.Value / 255.0f);
+            _legendColor = new Color(_legendaryColorRPref.Value / 255.0f, _legendaryColorGPref.Value / 255.0f,
+                _legendaryColorBPref.Value / 255.0f);
         }
 
         private static void SetupTrustRankButton()
@@ -195,7 +216,8 @@ namespace OGTrustRanks
             var quickMenuGameObject = QuickMenu.prop_QuickMenu_0.field_Private_GameObject_4;
             if (quickMenuGameObject == null)
                 return;
-            var component = quickMenuGameObject.transform.Find("Toggle_States_ShowTrustRank_Colors").GetComponent<UiToggleButton>();
+            var component = quickMenuGameObject.transform.Find("Toggle_States_ShowTrustRank_Colors")
+                .GetComponent<UiToggleButton>();
             if (component == null)
                 return;
 
@@ -204,14 +226,13 @@ namespace OGTrustRanks
                 return;
 
             if (_enabledPref.Value)
-            {
                 switch (rank)
                 {
                     case TrustRanks.Veteran:
                         SetupRankDisplay(component, "Veteran User", _veteranUserColor);
                         break;
-                    case TrustRanks.Legendary:
-                        SetupRankDisplay(component, "Legendary User", _legendaryUserColor);
+                    case TrustRanks.Legend:
+                        SetupRankDisplay(component, "Legend", _legendColor);
                         break;
                     case TrustRanks.Known:
                         SetupRankDisplay(component, "Known User", _knownUserColor);
@@ -222,11 +243,9 @@ namespace OGTrustRanks
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
-            }
             else
-            {
-                SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User", rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
-            }
+                SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User",
+                    rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
         }
 
         private static void SetupRankDisplay(UiToggleButton toggleButton, string displayName, Color color)
@@ -253,19 +272,21 @@ namespace OGTrustRanks
 
             if (GetPlayerByUserId(__0.id) != null)
             {
-                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
-                if (!showSocialRank)
-                {
-                    return true;
-                }
+                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
+                if (!showSocialRank) return true;
             }
-            
+
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
 
             if (rank == TrustRanks.Ignore) return true;
 
             __result = $"{rank} User";
+
+            if (rank == TrustRanks.Legend)
+            {
+                __result = $"Veteran User + {rank}";
+            }
             return false;
         }
 
@@ -275,13 +296,10 @@ namespace OGTrustRanks
 
             if (GetPlayerByUserId(__0.id) != null)
             {
-                var showSocialRank = (bool)_showSocialRankMethod.Invoke(null, new object[] { __0 });
-                if (!showSocialRank)
-                {
-                    return true;
-                }
+                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
+                if (!showSocialRank) return true;
             }
-            
+
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
             switch (rank)
@@ -295,14 +313,15 @@ namespace OGTrustRanks
                 case TrustRanks.Veteran:
                     __result = _veteranUserColor;
                     return false;
-                case TrustRanks.Legendary:
-                    __result = _legendaryUserColor;
+                case TrustRanks.Legend:
+                    __result = _legendColor;
                     return false;
                 case TrustRanks.Ignore:
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
+
             return true;
         }
 
@@ -311,8 +330,8 @@ namespace OGTrustRanks
             if (user?.tags == null || user.tags.Count <= 0)
                 return TrustRanks.Ignore;
 
-            if (user.tags.Contains("system_legend") && user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
-                return TrustRanks.Legendary;
+            if (user.tags.Contains("system_legend"))
+                return TrustRanks.Legend;
             if (user.tags.Contains("system_trust_legend") && user.tags.Contains("system_trust_trusted"))
                 return TrustRanks.Veteran;
             if (user.tags.Contains("system_trust_veteran") && user.tags.Contains("system_trust_trusted"))
@@ -322,21 +341,21 @@ namespace OGTrustRanks
             return TrustRanks.Ignore;
         }
 
-        private enum TrustRanks
-        {
-            Ignore,
-            Known,
-            Trusted,
-            Veteran,
-            Legendary,
-        }
-
         private static Player GetPlayerByUserId(string userId)
         {
             foreach (var player in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
                 if (player.prop_APIUser_0 != null && player.prop_APIUser_0.id == userId)
                     return player;
             return null;
+        }
+
+        private enum TrustRanks
+        {
+            Ignore,
+            Known,
+            Trusted,
+            Veteran,
+            Legend
         }
     }
 }

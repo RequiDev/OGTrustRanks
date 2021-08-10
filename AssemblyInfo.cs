@@ -1,12 +1,15 @@
 ﻿using System.Reflection;
 using MelonLoader;
+using BuildInfo = OGTrustRanks.BuildInfo;
 
-[assembly: AssemblyTitle(OGTrustRanks.BuildInfo.Name)]
-[assembly: AssemblyCompany(OGTrustRanks.BuildInfo.Company)]
-[assembly: AssemblyProduct(OGTrustRanks.BuildInfo.Name)]
-[assembly: AssemblyCopyright("Created by " + OGTrustRanks.BuildInfo.Author)]
-[assembly: AssemblyTrademark(OGTrustRanks.BuildInfo.Company)]
-[assembly: AssemblyVersion(OGTrustRanks.BuildInfo.Version)]
-[assembly: AssemblyFileVersion(OGTrustRanks.BuildInfo.Version)]
-[assembly: MelonInfo(typeof(OGTrustRanks.OGTrustRanks), OGTrustRanks.BuildInfo.Name, OGTrustRanks.BuildInfo.Version, OGTrustRanks.BuildInfo.Author, OGTrustRanks.BuildInfo.DownloadLink)]
+[assembly: AssemblyTitle(BuildInfo.Name)]
+[assembly: AssemblyCompany(BuildInfo.Company)]
+[assembly: AssemblyProduct(BuildInfo.Name)]
+[assembly: AssemblyCopyright("Created by " + BuildInfo.Author)]
+[assembly: AssemblyTrademark(BuildInfo.Company)]
+[assembly: AssemblyVersion(BuildInfo.Version)]
+[assembly: AssemblyFileVersion(BuildInfo.Version)]
+[assembly:
+    MelonInfo(typeof(OGTrustRanks.OGTrustRanks), BuildInfo.Name, BuildInfo.Version, BuildInfo.Author,
+        BuildInfo.DownloadLink)]
 [assembly: MelonGame("VRChat", "VRChat")]
