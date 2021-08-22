@@ -1,11 +1,10 @@
+using HarmonyLib;
+using MelonLoader;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using HarmonyLib;
-using MelonLoader;
-using UnhollowerRuntimeLib.XrefScans;
 using UnityEngine;
 using UnityEngine.UI;
 using VRC;
@@ -51,7 +50,6 @@ namespace OGTrustRanks
         private static readonly Queue<string> UsersToFetch = new Queue<string>();
         private static readonly Random Random = new Random();
 
-        private static MethodBase _showSocialRankMethod;
         private static MethodInfo _reloadAvatarMethod;
 
         public override void OnApplicationStart()
@@ -102,25 +100,6 @@ namespace OGTrustRanks
                     new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank),
                         BindingFlags.NonPublic | BindingFlags.Static)))
             );
-
-            _showSocialRankMethod = XrefScanner.XrefScan(friendlyNameTargetMethod).Single(x =>
-            {
-                if (x.Type != XrefType.Method)
-                    return false;
-
-                var m = x.TryResolve();
-                if (m == null || !m.IsStatic || m.DeclaringType != typeof(VRCPlayer))
-                    return false;
-
-                var asInfo = m as MethodInfo;
-                if (asInfo == null || asInfo.ReturnType != typeof(bool))
-                    return false;
-
-                if (m.GetParameters().Length != 1 && m.GetParameters()[0].ParameterType != typeof(APIUser))
-                    return false;
-
-                return XrefScanner.XrefScan(m).Count() > 1;
-            }).TryResolve();
 
             // Thanks loukylor
             _reloadAvatarMethod = typeof(VRCPlayer).GetMethods().First(mi =>
@@ -176,7 +155,7 @@ namespace OGTrustRanks
                         if (_reloadAvatar.Value)
                         {
                             var player = GetPlayerByUserId(id);
-                            _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] {true});
+                            _reloadAvatarMethod.Invoke(player._vrcplayer, new object[] { true });
                         }
                     }), new Action<string>(error => { MelonLogger.Error($"Could not fetch APIUser object of {id}"); }));
                     yield return new WaitForSeconds(Random.Next(2, 5));
@@ -277,12 +256,6 @@ namespace OGTrustRanks
         {
             if (__0 == null || !_enabledPref.Value) return true;
 
-            if (GetPlayerByUserId(__0.id) != null)
-            {
-                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
-                if (!showSocialRank) return true;
-            }
-
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
 
@@ -294,7 +267,7 @@ namespace OGTrustRanks
 
         private static string GetRank(APIUser apiUser, TrustRanks rank, ref string __result)
         {
-            if (rank <= (TrustRanks) 3 && apiUser.HasTag("system_legend"))
+            if (rank <= (TrustRanks)3 && apiUser.HasTag("system_legend"))
                 return __result = $"{rank} User + Legend";
 
             if (rank == TrustRanks.VRChatTeam)
@@ -308,14 +281,10 @@ namespace OGTrustRanks
         {
             if (__0 == null || !_enabledPref.Value || APIUser.IsFriendsWith(__0.id)) return true;
 
-            if (GetPlayerByUserId(__0.id) != null)
-            {
-                var showSocialRank = (bool) _showSocialRankMethod.Invoke(null, new object[] {__0});
-                if (!showSocialRank) return true;
-            }
 
             var apiUser = CachedApiUsers.Find(x => x.id == __0.id) ?? __0;
             var rank = GetTrustRankEnum(apiUser);
+
             if (rank <= (TrustRanks)3 && apiUser.tags.Contains("system_legend"))
             {
                 __result = _legendColor;
@@ -364,7 +333,6 @@ namespace OGTrustRanks
 
             return TrustRanks.Ignore;
         }
-
         private static Player GetPlayerByUserId(string userId)
         {
             foreach (var player in PlayerManager.field_Private_Static_PlayerManager_0.field_Private_List_1_Player_0)
