@@ -1,4 +1,7 @@
 # OGTrustRanks
 Mod for VRChat using MelonLoader
 
-Utilizes hidden vrchat API tags to show different types of player/trust ranks. Shows VRChat Team members as well. Really similar and tried to be unified with VRCX by pypy and natsumi.
+Brings back Veteran Trust Rank to the game. Shows user "legend tag", more info here: https://github.com/vrchatapi/vrchatapi.github.io/pull/74 and https://github.com/pypy-vrc/VRCX/issues/232.
+You can edit the Colors for all known trust ranks in Mod Preferences. Also fixes this notorious bug https://i.imgur.com/OfbQqi3.png.
+
+DISCLAIMER: Only shows Veteran and Legendary ranks locally.
