@@ -19,7 +19,7 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine, Emilia, dave-kun, and Requi";
         public const string Company = "Lava Gang";
-        public const string Version = "1.1.4";
+        public const string Version = "1.1.5";
         public const string DownloadLink = "https://github.com/RequiDev/OGTrustRanks";
     }
 
@@ -53,57 +53,64 @@ namespace OGTrustRanks
         public override void OnApplicationStart()
         {
             var cat = MelonPreferences.CreateCategory("ogtrustranks", "OGTrustRanks");
-            _enabledPref = (MelonPreferences_Entry<bool>)cat.CreateEntry("enabled", true, "Enabled");
+            _enabledPref = cat.CreateEntry("enabled", true, "Enabled");
 
-            _knownColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
-            _knownColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
-            _knownColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
+            _knownColorRPref = cat.CreateEntry("KnownColorR", 255, "Red component of the Known color");
+            _knownColorGPref = cat.CreateEntry("KnownColorG", 122, "Green component of the Known color");
+            _knownColorBPref = cat.CreateEntry("KnownColorB", 66, "Blue component of the Known color");
 
-            _trustedColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
-            _trustedColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorG", 66, "Green component of the Trusted color");
-            _trustedColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("TrustedColorB", 230, "Blue component of the Trusted color");
+            _trustedColorRPref = cat.CreateEntry("TrustedColorR", 130, "Red component of the Trusted color");
+            _trustedColorGPref = cat.CreateEntry("TrustedColorG", 66, "Green component of the Trusted color");
+            _trustedColorBPref = cat.CreateEntry("TrustedColorB", 230, "Blue component of the Trusted color");
             
-            _veteranColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorR", 171, "Red component of the Veteran color");
-            _veteranColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorG", 205, "Green component of the Veteran color");
-            _veteranColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("VeteranColorB", 239, "Blue component of the Veteran color");
+            _veteranColorRPref = cat.CreateEntry("VeteranColorR", 171, "Red component of the Veteran color");
+            _veteranColorGPref = cat.CreateEntry("VeteranColorG", 205, "Green component of the Veteran color");
+            _veteranColorBPref = cat.CreateEntry("VeteranColorB", 239, "Blue component of the Veteran color");
 
-            _legendaryColorRPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
-            _legendaryColorGPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
-            _legendaryColorBPref = (MelonPreferences_Entry<int>)cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
+            _legendaryColorRPref = cat.CreateEntry("LegendaryColorR", 255, "Red component of the Legendary color");
+            _legendaryColorGPref = cat.CreateEntry("LegendaryColorG", 105, "Green component of the Legendary color");
+            _legendaryColorBPref = cat.CreateEntry("LegendaryColorB", 180, "Blue component of the Legendary color");
 
-            _reloadAvatar = (MelonPreferences_Entry<bool>) cat.CreateEntry("ReloadAvatar", false,
+            _reloadAvatar = cat.CreateEntry("ReloadAvatar", false,
                 "Reload avatars when fetched rank to update colors for BTKANameplateMod");
 
             UpdateColors();
 
             var harmony = new HarmonyLib.Harmony("OGTrustRanks");
+            foreach (var method in typeof(VRCPlayer).GetMethods())
+            {
+                if (!method.Name.StartsWith("Method_Public_Static_String_APIUser_") || method.Name.Length != 37)
+                    continue;
 
-            var friendlyNameTargetMethod = typeof(VRCPlayer).GetMethods().FirstOrDefault(it => !it.Name.Contains("PDM") && it.ReturnType.ToString().Equals("System.String") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser"));
-            harmony.Patch(friendlyNameTargetMethod, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
+                if (_showSocialRankMethod == null)
+                {
+                    _showSocialRankMethod = XrefScanner.XrefScan(method).Single(x =>
+                    {
+                        if (x.Type != XrefType.Method)
+                            return false;
+
+                        var m = x.TryResolve();
+                        if (m == null || !m.IsStatic || m.DeclaringType != typeof(VRCPlayer))
+                            return false;
+
+                        var asInfo = m as MethodInfo;
+                        if (asInfo == null || asInfo.ReturnType != typeof(bool))
+                            return false;
+
+                        if (m.GetParameters().Length != 1 && m.GetParameters()[0].ParameterType != typeof(APIUser))
+                            return false;
+
+                        return XrefScanner.XrefScan(m).Count() > 1;
+                    }).TryResolve();
+                }
+
+                harmony.Patch(method, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
+            }
 
             var colorForRankTargetMethods = typeof(VRCPlayer).GetMethods().Where(it => it.ReturnType.ToString().Equals("UnityEngine.Color") && it.GetParameters().Length == 1 && it.GetParameters()[0].ParameterType.ToString().Equals("VRC.Core.APIUser")).ToList();
             colorForRankTargetMethods.ForEach(it =>
                 harmony.Patch(it, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetColorForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)))
             );
-
-            _showSocialRankMethod = XrefScanner.XrefScan(friendlyNameTargetMethod).Single(x =>
-            {
-                if (x.Type != XrefType.Method)
-                    return false;
-
-                var m = x.TryResolve();
-                if (m == null || !m.IsStatic || m.DeclaringType != typeof(VRCPlayer))
-                    return false;
-
-                var asInfo = m as MethodInfo;
-                if (asInfo == null || asInfo.ReturnType != typeof(bool))
-                    return false;
-
-                if (m.GetParameters().Length != 1 && m.GetParameters()[0].ParameterType != typeof(APIUser))
-                    return false;
-
-                return XrefScanner.XrefScan(m).Count() > 1;
-            }).TryResolve();
 
             // Thanks loukylor
             _reloadAvatarMethod = typeof(VRCPlayer).GetMethods().First(mi =>
