@@ -188,7 +188,6 @@ namespace OGTrustRanks
         private static void Refresh()
         {
             UpdateColors();
-            SetupTrustRankButton();
         }
 
         private static void UpdateColors()
@@ -197,65 +196,6 @@ namespace OGTrustRanks
             _trustedUserColor = new Color(_trustedColorRPref.Value / 255.0f, _trustedColorGPref.Value / 255.0f, _trustedColorBPref.Value / 255.0f);
             _veteranUserColor = new Color(_veteranColorRPref.Value / 255.0f, _veteranColorGPref.Value / 255.0f, _veteranColorBPref.Value / 255.0f);
             _legendaryUserColor = new Color(_legendaryColorRPref.Value / 255.0f, _legendaryColorGPref.Value / 255.0f, _legendaryColorBPref.Value / 255.0f);
-        }
-
-        private static void SetupTrustRankButton()
-        {
-            if (QuickMenu.prop_QuickMenu_0 == null)
-                return;
-            var quickMenuGameObject = QuickMenu.prop_QuickMenu_0.field_Private_GameObject_4;
-            if (quickMenuGameObject == null)
-                return;
-            var component = quickMenuGameObject.transform.Find("Toggle_States_ShowTrustRank_Colors").GetComponent<UiToggleButton>();
-            if (component == null)
-                return;
-
-            var rank = GetTrustRankEnum(APIUser.CurrentUser);
-            if (rank == TrustRanks.Ignore)
-                return;
-
-            if (_enabledPref.Value)
-            {
-                switch (rank)
-                {
-                    case TrustRanks.Veteran:
-                        SetupRankDisplay(component, "Veteran User", _veteranUserColor);
-                        break;
-                    case TrustRanks.Legendary:
-                        SetupRankDisplay(component, "Legendary User", _legendaryUserColor);
-                        break;
-                    case TrustRanks.Known:
-                        SetupRankDisplay(component, "Known User", _knownUserColor);
-                        break;
-                    case TrustRanks.Trusted:
-                        SetupRankDisplay(component, "Trusted User", _trustedUserColor);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-            else
-            {
-                SetupRankDisplay(component, rank == TrustRanks.Known ? "Known User" : "Trusted User", rank == TrustRanks.Known ? _knownUserColor : _trustedUserColor);
-            }
-        }
-
-        private static void SetupRankDisplay(UiToggleButton toggleButton, string displayName, Color color)
-        {
-            var displayTransform = toggleButton.transform.Find("TRUSTED");
-            if (displayTransform == null)
-                return;
-            var gameObject = displayTransform.gameObject;
-            if (gameObject == null)
-                return;
-            toggleButton.field_Public_GameObject_0 = displayTransform.Find("ON").gameObject;
-            Text[] btnTextsOn = toggleButton.field_Public_GameObject_0.GetComponentsInChildren<Text>();
-            btnTextsOn[3].text = displayName;
-            btnTextsOn[3].color = color;
-            toggleButton.field_Public_GameObject_1 = displayTransform.Find("OFF").gameObject;
-            Text[] btnTextsOff = toggleButton.field_Public_GameObject_1.GetComponentsInChildren<Text>();
-            btnTextsOff[3].text = displayName;
-            btnTextsOff[3].color = color;
         }
 
         private static bool GetFriendlyDetailedNameForSocialRank(APIUser __0, ref string __result)
