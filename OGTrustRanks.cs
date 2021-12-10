@@ -19,7 +19,7 @@ namespace OGTrustRanks
         public const string Name = "OGTrustRanks";
         public const string Author = "Herp Derpinstine, Emilia, dave-kun, and Requi";
         public const string Company = "Lava Gang";
-        public const string Version = "1.1.5";
+        public const string Version = "1.1.6";
         public const string DownloadLink = "https://github.com/RequiDev/OGTrustRanks";
     }
 
@@ -84,7 +84,7 @@ namespace OGTrustRanks
 
                 if (_showSocialRankMethod == null)
                 {
-                    _showSocialRankMethod = XrefScanner.XrefScan(method).Single(x =>
+                    var xrefInstance = XrefScanner.XrefScan(method).FirstOrDefault(x =>
                     {
                         if (x.Type != XrefType.Method)
                             return false;
@@ -101,7 +101,11 @@ namespace OGTrustRanks
                             return false;
 
                         return XrefScanner.XrefScan(m).Count() > 1;
-                    }).TryResolve();
+                    });
+                    if (xrefInstance.Type == XrefType.Method)
+                    {
+                        _showSocialRankMethod = xrefInstance.TryResolve();
+                    }
                 }
 
                 harmony.Patch(method, new HarmonyMethod(typeof(OGTrustRanks).GetMethod(nameof(GetFriendlyDetailedNameForSocialRank), BindingFlags.NonPublic | BindingFlags.Static)));
